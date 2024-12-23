@@ -1,54 +1,107 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
-//include images into your bundle
-import rigoImage from "../../img/rigo-baby.jpg";
+const TodoList = () => {
+  const url_api = "https://playground.4geeks.com/todo/users/jaimito";
 
-//create your first component
-const Home = () => {
-	const [inputValue, setInputValue] = useState("")
-	const [taskList, setTaskList] = useState([])
+  const [todos, setTodos] = useState([]);
+  const [newTodo, setNewTodo] = useState("");
 
-	const addTask = (task) => {
-		if (task.trim() != "") {
+  useEffect(() => {
+    const getData = async () => {
+      const response = await fetch(url_api);
+      if (response.ok) {
+        const data = await response.json();
+        console.log("datos de la API:", data); // imprime datos de la API
+        setTodos(data.todos || []);
+      } else {
+        console.log("error: ", response.status, response.statusText);
+      }
+    };
 
-			setTaskList(taskList.concat(task))
-		}
-		setInputValue("")
-	}
-	const removeTask = (index) => {
-		setTaskList(taskList.filter((_, i) => i !== index));
-	};
-	return (
-		<div className=" my-5 container">
-			<h1 className="text-center">TODOS</h1>
-			<input value={inputValue} onKeyDown={(e) => {
-				if (e.key == "Enter") {
-					addTask(inputValue)
-				}
-			}} onChange={(e) => setInputValue(e.target.value)} className="form-control form-control-lg" type="text" placeholder="What is your task?" aria-label=".form-control-lg example"></input>
-			<ul className="list-group">
-				{taskList.map((item,index) => {
-					return (
-						<li className="list-group-item d-flex justify-content-between align-items-center" key={index}>{item}
-						
-						<button type="button" onClick={() => removeTask(index) }  class="btn-close justify-end  " aria-label="Close"></button>
-					
-						</li>
-						
-					)
-				})}
-		
-	
-			
-			<span className="card-footer text-muted">
-				{taskList.length} items left
-			</span>
-			</ul>
-		
+    getData();
+  }, []);
 
-	
-		</div>
-	);
+  const handleClick = () => {
+    if (newTodo.trim() !== "") {
+      const newTask = { label: newTodo, is_done: false, id: Date.now() };
+      setTodos([...todos, newTask]);
+      console.log("Tarea agregada:", newTask);
+      setNewTodo("");
+    }
+  };
+
+  const deleteTask = (indice) => {
+    const newList = todos.filter((todo, i) => i !== indice);
+    setTodos(newList);
+  };
+
+  const completeTask = (indice) => {
+    const updatedTodos = todos.map((todo, i) => {
+      if (i === indice) {
+        console.log(
+          todo.is_done ? "Tarea marcada como incompleta:" : "Tarea completada:",
+          todo
+        );
+        return { ...todo, is_done: !todo.is_done };
+      }
+      return todo;
+    });
+    setTodos(updatedTodos);
+  };
+
+  const handleChange = (event) => {
+    setNewTodo(event.target.value);
+  };
+
+  return (
+    <div className="content">
+      <h1 className="title">Todo List</h1>
+      <div className="container">
+        <div className="addNew">
+          <input
+            type="text"
+            className="form-control"
+            value={newTodo}
+            onChange={handleChange}
+            placeholder="Escribiendo..."
+          />
+          <button onClick={handleClick} className="btn btn-success">
+            Agregar
+          </button>
+        </div>
+        <ul className="list-group">
+          {todos.map((todo, indice) => {
+            return (
+              <li
+                key={indice}
+                className={`list-group-item d-flex justify-content-between align-items-center ${
+                  indice % 2 === 0 ? "bg-light" : ""
+                }`}
+              >
+                <span>{todo.label}</span>
+                <div className="button-container">
+                  <button
+                    onClick={() => completeTask(indice)}
+                    className={`btn ${
+                      todo.is_done ? "btn-secondary" : "btn-warning"
+                    }`}
+                  >
+                    {todo.is_done ? "Incompleto" : "Completado"}
+                  </button>
+                  <button
+                    onClick={() => deleteTask(indice)}
+                    className="btn btn-danger"
+                  >
+                    Borrar
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </div>
+  );
 };
 
-export default Home;
+export default TodoList;
